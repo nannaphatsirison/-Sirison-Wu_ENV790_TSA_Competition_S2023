@@ -1,0 +1,26 @@
+---
+title: "Hourly Load Demand Forecast Competition"
+author: "Nannaphat Sirison, Lynn Wu"
+date: "`r Sys.Date()`"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Setting up the Workspace
+
+Loading in the dataset 
+
+
+## Examining the Time Series 
+
+
+You can also embed plots, for example:
+
+```{r pressure, echo=FALSE}
+plot(pressure)
+```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
