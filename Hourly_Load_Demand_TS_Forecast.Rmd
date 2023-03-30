@@ -5,22 +5,68 @@ date: "`r Sys.Date()`"
 output: pdf_document
 ---
 
-```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+
+```{r, include = FALSE}
+#Loading required packages
+library(lubridate)
+library(ggplot2)
+library(forecast)  
+library(Kendall)
+library(tseries)
+library(outliers)
+library(tidyverse)
+library(smooth)
+library(kableExtra)
+library(readxl)
 ```
 
-## Setting up the Workspace
-
-Loading in the dataset 
-
-
-## Examining the Time Series 
-
-
-You can also embed plots, for example:
-
-```{r pressure, echo=FALSE}
-plot(pressure)
+```{r, include = FALSE}
+#Loading in the data set 
+df<- read_excel("load.xlsx") 
 ```
 
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+```{r, include = FALSE}
+#DATA WRANGLING 
+
+#Taking the average of 
+df$hourly_mean <- rowMeans(df[,3:26])
+
+#Remove all neccessary columns: keep only date column and mean column
+df <- df[, c("date", "hourly_mean")]
+
+#Making data column a data object 
+df$date <- ymd(df$date)
+```
+
+```{r}
+#Making a time series object 
+ts <- msts(df[,2], seasonal.periods = c(7,365.25))
+```
+
+
+## Introduction to the Project 
+
+(Text to be filled in later when we write the report)
+
+##Overview of the Dataset
+
+```{r, echo=FALSE}
+#Plot of daily averaged time series 
+
+```
+
+Short description of the trend we see 
+
+##Time Series Analysis 
+
+
+
+##Model 1: 
+
+
+
+##Model 2:
+
+
+
+##Model 3: 
