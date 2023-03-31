@@ -2,7 +2,7 @@
 title: "Hourly Load Demand Forecast Competition"
 author: "Nannaphat Sirison, Lynn Wu"
 date: "`r Sys.Date()`"
-output: pdf_document
+output: github_document
 ---
 
 
@@ -43,7 +43,7 @@ df$date <- ymd(df$date)
 ts <- msts(df[,2], seasonal.periods = c(7,365.25))
 ```
 
-
+askdlasjdlsk 
 ## Introduction to the Project 
 
 (Text to be filled in later when we write the report)
