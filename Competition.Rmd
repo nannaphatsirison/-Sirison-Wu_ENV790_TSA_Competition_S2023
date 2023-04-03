@@ -1,10 +1,11 @@
 ---
 title: "Competition_RMD"
+author: "Nannaphat Sirison, Lynn Wu" 
 output: html_document
 date: "2023-04-03"
 ---
 
-## INTRODUCTION
+##  INTRODUCTION
 
 ```{r setup, include=FALSE}
 #Installing required packages
@@ -50,6 +51,9 @@ ts <- msts(df[,2], seasonal.periods = c(7,365.25))
 
 ## DATA ANALYSIS
 
+```{r}
+
+```
 
 ```{r}
 #Original Series: Decomposition 
