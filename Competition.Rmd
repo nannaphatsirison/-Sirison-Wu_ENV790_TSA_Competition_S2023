@@ -4,26 +4,75 @@ output: html_document
 date: "2023-04-03"
 ---
 
+
+##INTRODUCTION
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+
+#Installing required packages
+
+library(lubridate)
+library(ggplot2)
+library(forecast)
+library(Kendall)
+library(tseries)
+library(outliers)
+library(tidyverse)
+library(smooth)
+library(kableExtra)
+library(readxl)
 ```
 
-## R Markdown
+## EXPLORING THE DATA
 
-This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+```{r, include= FALSE}
 
-When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+#Loading in the data set
 
-```{r cars}
-summary(cars)
+df <- read_excel(path="C:/Users/lynny/OneDrive/Desktop/ENV 790/load.xlsx")
 ```
 
-## Including Plots
+```{r, include = FALSE}
 
-You can also embed plots, for example:
+#DATA WRANGLING
 
-```{r pressure, echo=FALSE}
-plot(pressure)
+#Taking the average across hours of the day
+
+df$hourly_mean <- rowMeans(df[,3:26])
+
+#Selecting only necessary columns: data and hourly mean
+
+df <- df[, c("date","hourly_mean")]
+
+#Making date column a date format
+
+df$date <- ymd(df$date)
+
 ```
 
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+```{r, include = FALSE}
+
+#Converting to time series object
+
+ts <- msts(df[,2], seasonal.periods = c(7,365.25))
+
+```
+
+```{r, echo= FALSE}
+
+#Initial plot of time series
+
+```
+
+## DATA ANALYSIS
+
+```{r}
+
+#Original Series: ACF and PACF Plots
+
+```
+
+```{r}
+
+#Original Series: Decomposition
+
+```
