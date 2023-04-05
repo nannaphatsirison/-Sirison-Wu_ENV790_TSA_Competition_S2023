@@ -84,23 +84,62 @@ PACF_Plot <- Pacf(ts, lag = 40,plot = TRUE,main="PACF of Hourly Mean")
 >Plots not only show strong seasonality but also non-stationarity due to the slow decay.
 
 ```{r}
-
 #Original Series: Decomposition
 ts %>% mstl() %>%
   autoplot()
 ```
 >The trend has a narrow range compared to seasonal components. Both weekly and yearly pattern have strong scales and trend components in daily data.
 
-## Forecasting Daily Active Power
+##FORECASTING DAILY ACTIVE POWER
+
 ```{r message=FALSE, warning=FALSE}
 #create a subset for training purpose (2005-2009)
 n_for = 365
-ts_daily_train <- subset(ts,end = length(ts)-n_for)
+ts_train <- subset(ts,end = length(ts)-n_for)
 
 #create a subset for testing purpose (2009-2010)
-ts_daily_test <- subset(ts,start = length(ts)-n_for)
+ts_test <- subset(ts, start = length(ts)-n_for)
 
-autoplot(ts_daily_train)
-autoplot(ts_daily_test)
+autoplot(ts_train)
+autoplot(ts_test)
 ```
 
+#Model 1: STL + ETS 
+
+```{r, echo=TRUE, message=FALSE, warning=FALSE}
+#Fit and forecast STL + ETS model to data
+ETS_fit <-  stlf(ts_train,h=365)
+```
+
+```{r}
+#Plot model + observed data
+autoplot(ts) +
+  autolayer(ETS_fit, series="STL + ETS",PI=FALSE) +
+  ylab("Hourly Load")
+```
+
+Discussion: we see that that it follows the seasonality well (as observed by the coincidental oscillation of the red and black series); however, the magnitude of the forecast does not fit the data we observe well, where observed data has a greater magnitude than the forecasted data. 
+
+```{r, include = FALSE}
+#WRANGLING FOR KAGGLE SUBMISSION
+
+#Generate 2011 output for Kaggle competition
+ETS_fit_kaggle <-  stlf(ts,h=59)
+#Save ETS_fit_kaggle as a dataframe
+ETS_fit_kaggle_df <- as.data.frame(ETS_fit_kaggle$mean)
+
+#Read in submission template
+submission_template<-read_excel("submission_template.xlsx")
+#Merge df
+submission_template_ETS <- cbind(submission_template,ETS_fit_kaggle_df)
+#Remove extra column
+submission_template_ETS <- submission_template_ETS[, c("date","x")]
+#Rename column from "x" to "load"
+colnames(submission_template_ETS) <- c("date","load")
+
+#Save out dataframe as excel file to submit to Kaggle 
+write.xlsx(ETS_kaggle_df_final, file = "Sirison_Wu_1.xlsx")
+```
+
+
+#Model 2: XXX
