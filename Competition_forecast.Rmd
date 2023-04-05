@@ -1,0 +1,61 @@
+---
+title: "Competition_RMD"
+author: "Nannaphat Sirison, Lynn Wu" 
+output: html_document
+date: "2023-04-03"
+---
+
+##  INTRODUCTION
+
+```{r setup, include=FALSE}
+#Installing required packages
+library(lubridate)
+library(ggplot2)
+library(forecast)  
+library(Kendall)
+library(tseries)
+library(outliers)
+library(tidyverse)
+library(smooth)
+library(kableExtra)
+```
+
+## EXPLORING THE DATA
+
+```{r, include= FALSE}
+#Loading in the data set
+df<-read_excel("load.xlsx")
+```
+
+```{r, include = FALSE}
+#DATA WRANGLING 
+
+#Taking the average across hours of the day 
+df$hourly_mean <- rowMeans(df[,3:26])
+#Selecting only necessary columns: data and hourly mean
+df <- df[, c("date","hourly_mean")]
+#Making date column a date format
+df$date <- ymd(df$date)
+
+```
+
+```{r, include = FALSE}
+#Converting to time series object 
+ts <- msts(df[,2], seasonal.periods = c(7,365.25))
+```
+
+```{r, echo= FALSE}
+#Initial plot of time series
+```
+
+
+## DATA ANALYSIS
+
+```{r}
+
+```
+
+```{r}
+#Original Series: Decomposition 
+```
+
