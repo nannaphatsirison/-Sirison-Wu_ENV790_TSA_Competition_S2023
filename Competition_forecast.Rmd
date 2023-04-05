@@ -1,5 +1,5 @@
 ---
-title: "Competition_RMD"
+title: "Competition_Forecast_RMD"
 author: "Nannaphat Sirison, Lynn Wu" 
 output: html_document
 date: "2023-04-03"
@@ -18,44 +18,89 @@ library(outliers)
 library(tidyverse)
 library(smooth)
 library(kableExtra)
+library(readxl)
+library(zoo)
 ```
 
 ## EXPLORING THE DATA
 
 ```{r, include= FALSE}
+
 #Loading in the data set
+
 df<-read_excel("load.xlsx")
 ```
 
 ```{r, include = FALSE}
-#DATA WRANGLING 
 
-#Taking the average across hours of the day 
+#DATA WRANGLING
+
+#Taking the average across hours of the day
+
 df$hourly_mean <- rowMeans(df[,3:26])
+
 #Selecting only necessary columns: data and hourly mean
+
 df <- df[, c("date","hourly_mean")]
+
 #Making date column a date format
+
 df$date <- ymd(df$date)
 
 ```
 
 ```{r, include = FALSE}
-#Converting to time series object 
-ts <- msts(df[,2], seasonal.periods = c(7,365.25))
+#Drop NAs
+df1 <- df %>% drop_na()
+
+#Converting to time series object (2005.1.1-2010.12.31)
+
+ts <- msts(df1[,2], seasonal.periods = c(7,365.25),start=c(2005,01,01),end=c(2010,12,31))
+
 ```
 
 ```{r, echo= FALSE}
-#Initial plot of time series
-```
 
+#Initial plot of time series
+ts_plot<-ggplot(df1,aes(x=date, y=hourly_mean))+
+  geom_line()
+plot(ts_plot)
+
+#Summary of time series
+ts_summary<-summary(ts)
+ts_summary
+```
 
 ## DATA ANALYSIS
 
 ```{r}
 
+#Original Series: ACF and PACF Plots
+par(mfrow=c(1,2))
+ACF_Plot <- Acf(ts, lag = 40, plot = TRUE,main="ACF of Hourly Mean")
+PACF_Plot <- Pacf(ts, lag = 40,plot = TRUE,main="PACF of Hourly Mean")
+
 ```
+>Plots not only show strong seasonality but also non-stationarity due to the slow decay.
 
 ```{r}
-#Original Series: Decomposition 
+
+#Original Series: Decomposition
+ts %>% mstl() %>%
+  autoplot()
+```
+>The trend has a narrow range compared to seasonal components. Both weekly and yearly pattern have strong scales and trend components in daily data.
+
+## Forecasting Daily Active Power
+```{r message=FALSE, warning=FALSE}
+#create a subset for training purpose (2005-2009)
+n_for = 365
+ts_daily_train <- subset(ts,end = length(ts)-n_for)
+
+#create a subset for testing purpose (2009-2010)
+ts_daily_test <- subset(ts,start = length(ts)-n_for)
+
+autoplot(ts_daily_train)
+autoplot(ts_daily_test)
 ```
 
