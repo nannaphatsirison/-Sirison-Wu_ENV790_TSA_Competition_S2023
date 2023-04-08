@@ -20,6 +20,7 @@ library(smooth)
 library(kableExtra)
 library(readxl)
 library(zoo)
+library(openxlsx)
 ```
 
 ## EXPLORING THE DATA
@@ -138,7 +139,7 @@ submission_template_ETS <- submission_template_ETS[, c("date","x")]
 colnames(submission_template_ETS) <- c("date","load")
 
 #Save out dataframe as excel file to submit to Kaggle 
-write.xlsx(ETS_kaggle_df_final, file = "Sirison_Wu_1.xlsx")
+write.xlsx(submission_template_ETS, file = "Sirison_Wu_1.xlsx")
 ```
 
 
