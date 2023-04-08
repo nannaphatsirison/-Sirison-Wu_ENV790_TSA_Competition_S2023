@@ -21,6 +21,7 @@ library(kableExtra)
 library(readxl)
 library(zoo)
 library(openxlsx)
+library(writexl)
 ```
 
 ## EXPLORING THE DATA
@@ -140,7 +141,57 @@ colnames(submission_template_ETS) <- c("date","load")
 
 #Save out dataframe as excel file to submit to Kaggle 
 write.xlsx(submission_template_ETS, file = "Sirison_Wu_1.xlsx")
+
 ```
 
+#Model 2: ARIMA + FOURIER terms
 
-#Model 2: XXX
+```{r ARIMA, echo=TRUE, message=FALSE, warning=FALSE}
+
+ARIMA_Four_fit <- auto.arima(ts_train, 
+                             seasonal=FALSE, 
+                             lambda=0,
+                             xreg=fourier(ts_train, 
+                                          K=c(2,48))
+                             )
+
+#Forecast with ARIMA fit
+ARIMA_Four_for <- forecast(ARIMA_Four_fit,
+                           xreg=fourier(ts_train,
+                                        K=c(2,48),
+                                        h=365),
+                           h=365
+                           ) 
+
+#Plot foresting results
+autoplot(ARIMA_Four_for) + ylab("Hourly Load")
+
+#Plot model + observed data
+autoplot(ts) +
+  autolayer(ARIMA_Four_for, series="ARIMA_FOURIER",PI=FALSE) +
+  ylab("Hourly Load")
+```
+
+```{r, include = FALSE}
+#WRANGLING FOR KAGGLE SUBMISSION
+
+#Generate 2011 output for Kaggle competition
+ARIMA_FOURIER_fit_kaggle <-  forecast(ARIMA_Four_for,h=59)
+#Save ETS_fit_kaggle as a dataframe
+ARIMA_FOURIER_fit_kaggle_df <- as.data.frame(ARIMA_FOURIER_fit_kaggle$mean)
+
+#Merge df
+submission_template_ARIMA <- cbind(submission_template,ARIMA_FOURIER_fit_kaggle_df)
+#Remove extra column
+submission_template_ARIMA <- submission_template_ARIMA[, c("date","x")]
+#Rename column from "x" to "load"
+colnames(submission_template_ARIMA) <- c("date","load_Model2")
+
+#Merge model1 and model2
+combine_model_final<- merge(submission_template_ETS,submission_template_ARIMA,by="date")
+colnames(combine_model_final) <- c("date","load_Model1","load_Model2")
+
+#Save out dataframe as excel file to submit to Kaggle 
+write.xlsx(combine_model_final, file = "Sirison_Wu_2.xlsx")
+
+```
