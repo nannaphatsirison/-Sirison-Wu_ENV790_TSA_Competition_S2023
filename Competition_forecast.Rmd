@@ -195,3 +195,85 @@ colnames(combine_model_final) <- c("date","load_Model1","load_Model2")
 write.xlsx(combine_model_final, file = "Sirison_Wu_2.xlsx")
 
 ```
+
+
+#Model 3: TBATS
+
+```{r, echo=TRUE, message=FALSE, warning=FALSE}
+TBATS_fit <- tbats(ts_train)
+TBATS_for <- forecast(TBATS_fit, h=365)
+```
+
+```{r}
+#Plot TBATS forecast vs observed data 
+autoplot(ts) +
+  autolayer(TBATS_for, series="TBATS",PI=FALSE)+
+  ylab("Hourly Load") 
+```
+
+```{r, include = FALSE}
+#WRANGLING FOR KAGGLE SUBMISSION
+#Generate 2011 output for Kaggle competition
+TBATS_fit_kaggle <- forecast(TBATS_fit, h=59)
+#Save TBATS_fit_kaggle as a dataframe
+TBATS_fit_kaggle_df <- as.data.frame(TBATS_fit_kaggle$mean)
+
+#Read in submission template
+submission_template<-read_excel("submission_template.xlsx")
+#Merge df
+submission_template_TBATS <- cbind(submission_template,TBATS_fit_kaggle_df)
+#Remove extra column
+submission_template_TBATS <- submission_template_TBATS[, c("date","x")]
+#Rename column from "x" to "load"
+colnames(submission_template_TBATS) <- c("date","load")
+
+#Save out dataframe as excel file to submit to Kaggle 
+write.xlsx(submission_template_TBATS, file = "Sirison_Wu_3.xlsx")
+```
+
+
+##EXAMINING ACCURACY OF FORECASTS 
+
+#Model 1: STL + ETS Accuracy 
+```{r, include = FALSE}
+ETS_scores <- accuracy(ETS_fit$mean,ts_test)  
+```
+
+#Model 2: Arima + Fourier Accuracy 
+```{r, include = FALSE}
+ARIMA_scores <- accuracy(ARIMA_Four_for$mean,ts_test)
+```
+
+#Model 3: TBATS Accuracy 
+```{r, include = FALSE}
+TBATS_scores <- accuracy(TBATS_for$mean,ts_test)
+```
+
+#Model 4: XXX Accuracy 
+```{r}
+
+```
+
+
+#Accuracy Comparison
+```{r}
+#Graph of all forecast models 
+autoplot(ts) +
+  autolayer(ETS_fit, series="STL + ETS",PI=FALSE) +
+  autolayer(ARIMA_Four_for, series="ARIMA_FOURIER",PI=FALSE) +
+  autolayer(TBATS_for, series="TBATS",PI=FALSE)+
+  ylab("Hourly Load") 
+```
+
+
+
+```{r}
+#Table of accuracy statistics
+```
+
+
+##CONCLUSION
+
+
+
+
