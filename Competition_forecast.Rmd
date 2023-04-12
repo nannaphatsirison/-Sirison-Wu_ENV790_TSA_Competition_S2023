@@ -23,30 +23,24 @@ library(zoo)
 library(openxlsx)
 library(writexl)
 ```
+This project aims to utilize time series forecasting tools to model hourly load demand. As population increases, and as renewable energy penetration increases, it is important to develop models that help forecast load that can help utilities understand load patterns and long term trends in load. This can help utilities plan for how much generation and capacity they can should be procuring to make sure that load is appropriately met. 
 
 ## EXPLORING THE DATA
 
 ```{r, include= FALSE}
-
 #Loading in the data set
-
 df<-read_excel("load.xlsx")
 ```
 
 ```{r, include = FALSE}
-
 #DATA WRANGLING
-
 #Taking the average across hours of the day
-
 df$hourly_mean <- rowMeans(df[,3:26])
 
 #Selecting only necessary columns: data and hourly mean
-
 df <- df[, c("date","hourly_mean")]
 
 #Making date column a date format
-
 df$date <- ymd(df$date)
 
 ```
@@ -56,16 +50,16 @@ df$date <- ymd(df$date)
 df1 <- df %>% drop_na()
 
 #Converting to time series object (2005.1.1-2010.12.31)
-
 ts <- msts(df1[,2], seasonal.periods = c(7,365.25),start=c(2005,01,01),end=c(2010,12,31))
 
 ```
 
 ```{r, echo= FALSE}
-
 #Initial plot of time series
 ts_plot<-ggplot(df1,aes(x=date, y=hourly_mean))+
-  geom_line()
+  geom_line()+
+  labs(y="Load", x= "Year", title="Daily Load (averaged across hours)")+
+  theme_minimal()
 plot(ts_plot)
 
 #Summary of time series
@@ -73,17 +67,25 @@ ts_summary<-summary(ts)
 ts_summary
 ```
 
+The dataset we are working in provides hourly data from January 1, 2005 to December 31,2010. We have aggregated hourly data into daily data, by taking the average across 24 hours of each day. 
+
+In the plot above, we see that across the time series we there are obvious fluctuations/ oscillations. These fluctuations are not surprising; it is a common for load to vary based on seasons and time of day, for example, higher load is expected during summer time than spring time. 
+
+Observed minimum load is at 1525, and maximum load is at 7545. Mean load is 3329 and median load is 3182. From the plot we observe an overally increasing trend.  
+
 ## DATA ANALYSIS
 
-```{r}
+Before running a time series forecast model, we prepare and transform the data to fit the needs of time series forecasting. Before selecting models for time series forecasting, we examine ACF and PACF plots of the original, un-transformed time series (shown below).
 
+```{r}
 #Original Series: ACF and PACF Plots
 par(mfrow=c(1,2))
 ACF_Plot <- Acf(ts, lag = 40, plot = TRUE,main="ACF of Hourly Mean")
 PACF_Plot <- Pacf(ts, lag = 40,plot = TRUE,main="PACF of Hourly Mean")
-
 ```
 >Plots not only show strong seasonality but also non-stationarity due to the slow decay.
+
+We then examine the decomposition of the original time series to identify seasonality and trend. Decomposition of the time series is displayed below: 
 
 ```{r}
 #Original Series: Decomposition
@@ -120,7 +122,7 @@ autoplot(ts) +
   ylab("Hourly Load")
 ```
 
-Discussion: we see that that it follows the seasonality well (as observed by the coincidental oscillation of the red and black series); however, the magnitude of the forecast does not fit the data we observe well, where observed data has a greater magnitude than the forecasted data. 
+We observe that that it follows the seasonality well (as observed by the coincidental oscillation of the red and black series); however, the magnitude of the forecast does not fit the data we observe well, where observed data has a greater magnitude than the forecasted data. 
 
 ```{r, include = FALSE}
 #WRANGLING FOR KAGGLE SUBMISSION
