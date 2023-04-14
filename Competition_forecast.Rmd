@@ -8,6 +8,7 @@ date: "2023-04-03"
 ##  INTRODUCTION
 
 ```{r setup, include=FALSE}
+knitr::opts_chunk$set(warning = FALSE, message = FALSE)
 #Installing required packages
 library(lubridate)
 library(ggplot2)
@@ -235,7 +236,36 @@ write.xlsx(submission_template_TBATS, file = "Sirison_Wu_3.xlsx")
 
 #Model 4. Neutral Network Time Series Forecasts
 ```{r}
+#NN_fit and forecast
 NN_fit <- nnetar(ts_train,p=1,P=0,xreg=fourier(ts_train, K=c(2,12)))
+NN_for <- forecast(NN_fit, h=365,xreg=fourier(ts_train, 
+                                          K=c(2,12),h=365))
+```
+
+```{r}
+#Plot NN forecast vs observed data 
+autoplot(ts) +
+  autolayer(NN_for, series="Neutral Network",PI=FALSE)+
+  ylab("Hourly Load") 
+```
+```{r, include = FALSE}
+#WRANGLING FOR KAGGLE SUBMISSION
+#Generate 2011 output for Kaggle competition
+NN_fit_kaggle <- forecast(NN_for, h=59)
+#Save NN_fit_kaggle as a dataframe
+NN_fit_kaggle_df <- as.data.frame(NN_fit_kaggle$mean)
+
+#Read in submission template
+submission_template<-read_excel("submission_template.xlsx")
+#Merge df
+submission_template_NN <- cbind(submission_template,NN_fit_kaggle_df)
+#Remove extra column
+submission_template_NN <- submission_template_NN[, c("date","x")]
+#Rename column from "x" to "load"
+colnames(submission_template_NN) <- c("date","load")
+
+#Save out dataframe as excel file to submit to Kaggle 
+write.xlsx(submission_template_NN, file = "Sirison_Wu_4.xlsx")
 ```
 
 
@@ -258,7 +288,7 @@ TBATS_scores <- accuracy(TBATS_for$mean,ts_test)
 
 #Model 4: XXX Accuracy 
 ```{r}
-
+NN_scores <- accuracy(NN_for$mean,ts_test)
 ```
 
 
@@ -269,13 +299,30 @@ autoplot(ts) +
   autolayer(ETS_fit, series="STL + ETS",PI=FALSE) +
   autolayer(ARIMA_Four_for, series="ARIMA_FOURIER",PI=FALSE) +
   autolayer(TBATS_for, series="TBATS",PI=FALSE)+
+  autolayer(NN_for, series="NN",PI=FALSE)+
   ylab("Hourly Load") 
 ```
 
-
-
+#Compare performance metrics
 ```{r}
-#Table of accuracy statistics
+#create data frame
+scores <- as.data.frame(
+  rbind(ETS_scores, ARIMA_scores, TBATS_scores, NN_scores)
+  )
+row.names(scores) <- c("STL+ETS", "ARIMA+Fourier","TBATS","NN")
+
+#choose model with lowest RMSE
+best_model_index <- which.min(scores[,"RMSE"])
+cat("The best model by RMSE is:", row.names(scores[best_model_index,]))                       
+```
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+#Table of accuracy statitics
+kbl(scores, 
+      caption = "Forecast Accuracy for Daily Active Power",
+      digits = array(5,ncol(scores))) %>%
+  kable_styling(full_width = FALSE, position = "center", latex_options = "hold_position") %>%
+  kable_styling(latex_options="striped", stripe_index = which.min(scores[,"RMSE"]))
 ```
 
 
