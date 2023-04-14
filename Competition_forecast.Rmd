@@ -95,7 +95,9 @@ ts %>% mstl() %>%
 ```
 >The trend has a narrow range compared to seasonal components. Both weekly and yearly pattern have strong scales and trend components in daily data.
 
-##FORECASTING DAILY ACTIVE POWER
+After aggregated data and analyzed original seasonality of time series, we should first forecast daily load before we fit models. We created two time series: one is trained data started from January 1st,2015 and end on December 31st,2019; and the other is tested data from January 1st,2020 to December 31st,2020. The trained time series is created to fit models, and the tested time series is used for checking the accuracy of our models as a year of data out-of-sample analysis.
+
+##FORECASTING DAILY LOAD
 
 ```{r message=FALSE, warning=FALSE}
 #create a subset for training purpose (2005-2009)
@@ -108,7 +110,7 @@ ts_test <- subset(ts, start = length(ts)-n_for)
 autoplot(ts_train)
 autoplot(ts_test)
 ```
-
+Our first forecasting model applies a non-seasonal exponential smoothing model to all seasonally adjusted data.
 #Model 1: STL + ETS 
 
 ```{r, echo=TRUE, message=FALSE, warning=FALSE}
@@ -147,6 +149,8 @@ write.xlsx(submission_template_ETS, file = "Sirison_Wu_1.xlsx")
 
 ```
 
+Our second model is called a dynamic harmonic regression model with an ARMA error structure, which adopts a log transformation in the ARIMA model to ensure the forecasts and prediction intervals remain positive. The FOURIER terms determine how quickly the seasonality could change.
+
 #Model 2: ARIMA + FOURIER terms
 
 ```{r ARIMA, echo=TRUE, message=FALSE, warning=FALSE}
@@ -174,6 +178,7 @@ autoplot(ts) +
   autolayer(ARIMA_Four_for, series="ARIMA_FOURIER",PI=FALSE) +
   ylab("Hourly Load")
 ```
+We tried different K numbers, such as 4, 6, 12, 24, 36, and 60. We found that although 48 performs the best accuracy compared with the original data, the observed data still have a greater magnitude than the forecasted data.
 
 ```{r, include = FALSE}
 #WRANGLING FOR KAGGLE SUBMISSION
