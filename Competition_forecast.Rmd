@@ -237,7 +237,7 @@ write.xlsx(submission_template_TBATS, file = "Sirison_Wu_3.xlsx")
 #Model 4. Neutral Network Time Series Forecasts
 ```{r}
 #NN_fit and forecast
-NN_fit <- nnetar(ts_train,p=1,P=0,xreg=fourier(ts_train, K=c(2,6)))
+NN_fit <- nnetar(ts_train,p=1,P=1,xreg=fourier(ts_train, K=c(2,6)))
 NN_for <- forecast(NN_fit, h=365,xreg=fourier(ts_train, 
                                           K=c(2,6),h=365))
 ```
