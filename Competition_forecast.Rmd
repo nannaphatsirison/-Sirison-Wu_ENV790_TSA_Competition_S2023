@@ -266,6 +266,7 @@ colnames(submission_template_NN) <- c("date","load")
 
 #Save out dataframe as excel file to submit to Kaggle 
 write.xlsx(submission_template_NN, file = "Sirison_Wu_4.xlsx")
+write.csv(submission_template_NN, file = "Sirison_Wu_4.csv")
 ```
 
 
