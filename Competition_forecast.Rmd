@@ -24,9 +24,18 @@ library(zoo)
 library(openxlsx)
 library(writexl)
 ```
-This project aims to utilize time series forecasting tools to model hourly load demand. As population increases, and as renewable energy penetration increases, it is important to develop models that help forecast load that can help utilities understand load patterns and long term trends in load. This can help utilities plan for how much generation and capacity they can should be procuring to make sure that load is appropriately met. 
+This project aims to utilize time series forecasting tools to model daily load demand. As population increases, and as renewable energy penetration increases, it is important to develop models that help forecast load that can help utilities understand load patterns and long term trends in load. This can help utilities plan for how much generation and capacity they can should be procuring to make sure that load is appropriately met. 
 
-## EXPLORING THE DATA
+This project aims to find a suitable model that best forecasts daily load. The methodology/ steps that we implemented is as follows:  
+> (1) Examine and explore the dataset for any initial trends  
+(2) Perform initial analysis of the time series using ACF and PACF plots, and decompositions of time series.  
+(3) Train 4 different models to the time series and examine performance against observed data  
+(4) Calculate performance metrics for each of the 4 models and chose the best model for a future forecast  
+(5) Generated a 5 month future forecast using the best chosen model 
+
+## ABOUT THE DATA
+
+The dataset we are working in provides hourly data from January 1, 2005 to December 31,2010. We have aggregated hourly data into daily data, by taking the average across 24 hours of each day. 
 
 ```{r, include= FALSE}
 #Loading in the data set
@@ -55,6 +64,8 @@ ts <- msts(df1[,2], seasonal.periods = c(7,365.25),start=c(2005,01,01),end=c(201
 
 ```
 
+A plot of the dataset we are working with is shown, below with a table of summary statistics. 
+
 ```{r, echo= FALSE}
 #Initial plot of time series
 ts_plot<-ggplot(df1,aes(x=date, y=hourly_mean))+
@@ -62,19 +73,19 @@ ts_plot<-ggplot(df1,aes(x=date, y=hourly_mean))+
   labs(y="Load", x= "Year", title="Daily Load (averaged across hours)")+
   theme_minimal()
 plot(ts_plot)
+```
 
+```{r, echo = FALSE}
 #Summary of time series
 ts_summary<-summary(ts)
 ts_summary
 ```
 
-The dataset we are working in provides hourly data from January 1, 2005 to December 31,2010. We have aggregated hourly data into daily data, by taking the average across 24 hours of each day. 
+In the plot above, we see that across the time series we there are obvious fluctuations/ oscillations. These fluctuations are not surprising; it is a common for load to vary based on seasons and time of day, for example, higher load is expected during summer time than spring time. We also observe an overall increasing trend, which is expected as energy intensity increases and population increases.
 
-In the plot above, we see that across the time series we there are obvious fluctuations/ oscillations. These fluctuations are not surprising; it is a common for load to vary based on seasons and time of day, for example, higher load is expected during summer time than spring time. 
+Based on the historical data set we are using, observed minimum load is at 1525, and maximum load is at 7545. Mean load is 3329 and median load is 3182.
 
-Observed minimum load is at 1525, and maximum load is at 7545. Mean load is 3329 and median load is 3182. From the plot we observe an overally increasing trend.  
-
-## DATA ANALYSIS
+## INITIAL TIME SERIES ANALYSIS
 
 Before running a time series forecast model, we prepare and transform the data to fit the needs of time series forecasting. Before selecting models for time series forecasting, we examine ACF and PACF plots of the original, un-transformed time series (shown below).
 
@@ -95,11 +106,11 @@ ts %>% mstl() %>%
 ```
 >The trend has a narrow range compared to seasonal components. Both weekly and yearly pattern have strong scales and trend components in daily data.
 
-After aggregated data and analyzed original seasonality of time series, we should first forecast daily load before we fit models. We created two time series: one is trained data started from January 1st,2015 and end on December 31st,2019; and the other is tested data from January 1st,2020 to December 31st,2020. The trained time series is created to fit models, and the tested time series is used for checking the accuracy of our models as a year of data out-of-sample analysis.
+After performing initial data exploration of aggregated (daily) data, we examine 4 forecasting models. Each model used training data from January 1, 2015 to December 21, 2019, and was compared to test data from January 1st,2020 to December 31st,2020 to check for accuracy. 
 
 ##FORECASTING DAILY LOAD
 
-```{r message=FALSE, warning=FALSE}
+```{r message=FALSE, warning=FALSE, include = FALSE}
 #create a subset for training purpose (2005-2009)
 n_for = 365
 ts_train <- subset(ts,end = length(ts)-n_for)
@@ -110,8 +121,10 @@ ts_test <- subset(ts, start = length(ts)-n_for)
 autoplot(ts_train)
 autoplot(ts_test)
 ```
-Our first forecasting model applies a non-seasonal exponential smoothing model to all seasonally adjusted data.
+
 #Model 1: STL + ETS 
+
+Our first forecasting model applies a non-seasonal exponential smoothing model to all seasonally adjusted data.
 
 ```{r, echo=TRUE, message=FALSE, warning=FALSE}
 #Fit and forecast STL + ETS model to data
@@ -122,10 +135,11 @@ ETS_fit <-  stlf(ts_train,h=365)
 #Plot model + observed data
 autoplot(ts) +
   autolayer(ETS_fit, series="STL + ETS",PI=FALSE) +
-  ylab("Hourly Load")
+  ylab("Daily Load")+
+  labs(title= "STL+ETS vs. Observed")
 ```
 
-We observe that that it follows the seasonality well (as observed by the coincidental oscillation of the red and black series); however, the magnitude of the forecast does not fit the data we observe well, where observed data has a greater magnitude than the forecasted data. 
+We observe that that the STL+ETS model follows the seasonality well (as observed by the coincidental oscillation of the red and black series); however, the magnitude of the forecast does not fit the data we observe well. Forecasted data has a greater magnitude than the observed data when the time series is at its peak but a lower magnitude than observed data when the time seriess is at its minimum. f. 
 
 ```{r, include = FALSE}
 #WRANGLING FOR KAGGLE SUBMISSION
@@ -149,9 +163,9 @@ write.xlsx(submission_template_ETS, file = "Sirison_Wu_1.xlsx")
 
 ```
 
-Our second model is called a dynamic harmonic regression model with an ARMA error structure, which adopts a log transformation in the ARIMA model to ensure the forecasts and prediction intervals remain positive. The FOURIER terms determine how quickly the seasonality could change.
-
 #Model 2: ARIMA + FOURIER terms
+
+Our second model is called a dynamic harmonic regression model with an ARMA error structure, which adopts a log transformation in the ARIMA model to ensure the forecasts and prediction intervals remain positive. The FOURIER terms determine how quickly the seasonality could change.
 
 ```{r ARIMA, echo=TRUE, message=FALSE, warning=FALSE}
 
@@ -176,9 +190,10 @@ autoplot(ARIMA_Four_for) + ylab("Hourly Load")
 #Plot model + observed data
 autoplot(ts) +
   autolayer(ARIMA_Four_for, series="ARIMA_FOURIER",PI=FALSE) +
-  ylab("Hourly Load")
+  ylab("Daily Load")+
+  labs(title= "ARIMA+Fourier Terms vs. Observed")
 ```
-We tried different K numbers, such as 4, 6, 12, 24, 36, and 60. We found that although 48 performs the best accuracy compared with the original data, the observed data still have a greater magnitude than the forecasted data.
+We tried different K numbers, such as 4, 6, 12, 24, 36, and 60. We found that although 48 performs the best accuracy compared with the original data, the forecasted still has a greater magnitude than observed data when the time series is at its peak/ maximum, but has a lower magnitude when the time series is at its minimum.
 
 ```{r, include = FALSE}
 #WRANGLING FOR KAGGLE SUBMISSION
@@ -204,20 +219,24 @@ write.xlsx(combine_model_final, file = "Sirison_Wu_2.xlsx")
 
 ```
 
-
 #Model 3: TBATS
+
+Our third model is the Trigonometric seasonality, Box-Cox transformation (TBATs), which is a model appropriate for handling time series data that has multiple seasonalities. The TBATS approach models seasonal periods using trigonmetrics based on Fourier series.
 
 ```{r, echo=TRUE, message=FALSE, warning=FALSE}
 TBATS_fit <- tbats(ts_train)
 TBATS_for <- forecast(TBATS_fit, h=365)
 ```
 
-```{r}
+```{r, echo= TRUE}
 #Plot TBATS forecast vs observed data 
 autoplot(ts) +
   autolayer(TBATS_for, series="TBATS",PI=FALSE)+
-  ylab("Hourly Load") 
+  ylab("Daily Load")+
+  labs(title= "TBATS vs. Observed")
 ```
+
+The TBATS model fits the seasonality well; however the magnitude for both when the time series is at its maximum and its minimum is lower than what observed data. 
 
 ```{r, include = FALSE}
 #WRANGLING FOR KAGGLE SUBMISSION
@@ -239,21 +258,28 @@ colnames(submission_template_TBATS) <- c("date","load")
 write.xlsx(submission_template_TBATS, file = "Sirison_Wu_3.xlsx")
 ```
 
-#Model 4. Neutral Network Time Series Forecasts
-```{r}
+#Model 4. Neural Network Time Series Forecasts
+
+Our fourth model is the Neural Network model. The neural networkk we used here is a feed forward neural network (FNN), meaning the nodes do not form a cycle or inputs to the FNN produces outputs that do not feed back into the next input. 
+
+```{r, include = FALSE}
 #NN_fit and forecast
 NN_fit <- nnetar(ts_train,p=1,P=0,xreg=fourier(ts_train, K=c(2,12)))
 NN_for <- forecast(NN_fit, h=365,xreg=fourier(ts_train, 
                                           K=c(2,12),h=365))
 ```
 
-```{r}
+```{r, echo = TRUE}
 #Plot NN forecast vs observed data 
 autoplot(ts) +
   autolayer(NN_for, series="Neutral Network",PI=FALSE)+
-  ylab("Hourly Load") 
+  ylab("Daily Load")+
+  labs(title= "Neural Network vs. Observed")
 ```
-```{r, include = FALSE}
+
+The neural network model is able to follow both the seasonality and magnitude of the observed data very well. 
+
+```{r,  message=FALSE, include = FALSE}
 #WRANGLING FOR KAGGLE SUBMISSION
 #Generate 2011 output for Kaggle competition
 NN_fit_kaggle <- forecast(NN_for, h=59)
@@ -271,46 +297,39 @@ colnames(submission_template_NN) <- c("date","load")
 
 #Save out dataframe as excel file to submit to Kaggle 
 write.xlsx(submission_template_NN, file = "Sirison_Wu_4.xlsx")
-
 ```
-
 
 ##EXAMINING ACCURACY OF FORECASTS 
 
-#Model 1: STL + ETS Accuracy 
 ```{r, include = FALSE}
+#Model 1: STL + ETS Accuracy
 ETS_scores <- accuracy(ETS_fit$mean,ts_test)  
-```
 
 #Model 2: Arima + Fourier Accuracy 
-```{r, include = FALSE}
 ARIMA_scores <- accuracy(ARIMA_Four_for$mean,ts_test)
-```
 
 #Model 3: TBATS Accuracy 
-```{r, include = FALSE}
 TBATS_scores <- accuracy(TBATS_for$mean,ts_test)
-```
 
-#Model 4: XXX Accuracy 
-```{r}
+#Model 4: Neural Network Accuracy 
 NN_scores <- accuracy(NN_for$mean,ts_test)
 ```
 
-
-#Accuracy Comparison
-```{r}
+#Accuracy Comparison 
+```{r, echo= TRUE}
 #Graph of all forecast models 
 autoplot(ts) +
   autolayer(ETS_fit, series="STL + ETS",PI=FALSE) +
   autolayer(ARIMA_Four_for, series="ARIMA_FOURIER",PI=FALSE) +
   autolayer(TBATS_for, series="TBATS",PI=FALSE)+
   autolayer(NN_for, series="NN",PI=FALSE)+
-  ylab("Hourly Load") 
+  ylab("Daily Load")+
+  labs(title = "Forecasting Model Comparison")
 ```
+After visually examining how each model performs compares to observed data, it is unclear which model performs the best; therefore, we calculate accuracy metrics for each model.
 
 #Compare performance metrics
-```{r}
+```{r, include = FALSE}
 #create data frame
 scores <- as.data.frame(
   rbind(ETS_scores, ARIMA_scores, TBATS_scores, NN_scores)
@@ -319,8 +338,10 @@ row.names(scores) <- c("STL+ETS", "ARIMA+Fourier","TBATS","NN")
 
 #choose model with lowest RMSE
 best_model_index <- which.min(scores[,"RMSE"])
-cat("The best model by RMSE is:", row.names(scores[best_model_index,]))                       
+cat("The best model by RMSE is:", row.names(scores[best_model_index,]))               
 ```
+
+We examine 2 metrics for model performance: RMSE (Root Mean Square Error) and MAPE (Mean Absolute Percentage Error). RMSE is a metric that averages the difference between actual and predicted values, meaning it takes errors in magnitude into account. MAPE measures the average percentage difference between actual and predicted values.
 
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
 #Table of accuracy statitics
@@ -331,9 +352,40 @@ kbl(scores,
   kable_styling(latex_options="striped", stripe_index = which.min(scores[,"RMSE"]))
 ```
 
+The best model by RMSE is the TBATS model, while the best model by MAPE is the Neural Network model. This discrepancy is due to the fact that RMSE and MAPE captures different aspects in terms of accuracy. RMSE focuses more on magnitude of errors, while MAPE focuses more on percentage of errors. 
+
+Due to the discrepancy by using just RMSE and MAPE for performance metrics, we also consider other metrics: MAE (mean averaged error) and MPE (mean percentage error). The TBATS model outperforms the Neural Network model in both MAE and MPE. 
+
+##FUTURE FORECAST BASED ON CHOSEN BEST ODEL
+
+In conclusion, after training and testing 4 models: STL+ETS, Arima + Fourier Terms, TBATS, and Neural Network, we conclude that the TBATS model is the best performing model for forecasting daily load.
+
+We then regenerated the TBATS model by training it using the entire dataframe, instead of using a subset, as performed previously. The regenerated TBATS model is then used to forecast daily load 5 months (151 days) into the future. The results of the future forecast using a TBATS model is displayed below: 
+
+```{r, message = FALSE, echo = TRUE}
+#Fit new TBATS model that uses the entire dataframe
+TBATS_fit_final <- tbats(ts)
+#Forecast of new TBATS model 
+TBATS_for_final <- forecast(TBATS_fit_final, h=151)
+```
+
+```{r, echo = TRUE}
+#Plot of future TBATS forecast
+autoplot(ts) +
+  autolayer(TBATS_for_final, series="TBATS",PI=FALSE)+
+  ylab("Daily Load")+
+  labs(title= "Observed Data + TBATS Future Forecast")
+```
 
 ##CONCLUSION
 
+#Discussion and Limitations
+We can see that the future forecast 5 months into the future, using the TBATS model looks "smoother" than the rest of the observed data. This is a result of the nature of the model. The TBATS forecast incorporates Box-Cox transformations that reduces variance, and ARMA terms that reduces the impact of random fluctuations. 
 
+We also observe a noticeable jump in load; minimum load seems to increase dramatically compared to the series last minima in the observed data. This dramatic increase may partially be due to the "smoothing" effect of the TBATS modeled as discussed above. Even though we do not expect daily load to change dramatically, we do know that under increasing frequency of extreme weather, unexpected load peaks (outliers) are to be expected. Therefore, even though the TBATS performed best when we evaluated models using accuracy metrics, this may mean that given the nature of our time series data (load data) the TBATS model may not be the model choice that is most applicable since it does not perform as well in capturing outliers. 
+
+Additionally, the unexpected, observed jump in minimum load may also highlight the limitations of time series forecasting.Even though we trained a forecasting model using more than a decade of data, this does not necessarily mean that the future forecast generated will be 100% accurate. Our model operates under the assumption that the same cycles, patterns and trends that persist in the past will persist into the future. 
+
+Overall, this project successfully explored multiple models that are fitted to daily load data. We concluded that the TBATS model outperformed the other 3 models (STL+ETS, Arima + Fourier, and Neural Network) using both a visual comparison and performance metrics (RMSE, MAPE, MSE, and MPE). We were able to generate a future prediction (5 months ahead) for daily load, in which we observed an increase in demand. Nonetheless, we acknowledge the limitations of both the model we chose for future forecasting as well as the limitations of time series forecasting. Regardless, forecasting of future load can still be useful for many stakeholders in the the energy and utility space. Despite the limitations of how accuracy a time series forecast can be, a general idea of what load might look like int he next 10 years can help utilities plan generation and capacity appropriately. 
 
 
