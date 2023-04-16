@@ -1,8 +1,10 @@
 ---
 title: "Competition_Forecast_RMD"
-author: "Nannaphat Sirison, Lynn Wu" 
-output: html_document
+author: "Nannaphat Sirison, Lynn Wu"
 date: "2023-04-03"
+output:
+  pdf_document: default
+  html_document: default
 ---
 
 ##  INTRODUCTION
@@ -89,7 +91,7 @@ Based on the historical data set we are using, observed minimum load is at 1525,
 
 Before running a time series forecast model, we prepare and transform the data to fit the needs of time series forecasting. Before selecting models for time series forecasting, we examine ACF and PACF plots of the original, un-transformed time series (shown below).
 
-```{r}
+```{r, echo=FALSE}
 #Original Series: ACF and PACF Plots
 par(mfrow=c(1,2))
 ACF_Plot <- Acf(ts, lag = 40, plot = TRUE,main="ACF of Hourly Mean")
@@ -99,7 +101,7 @@ PACF_Plot <- Pacf(ts, lag = 40,plot = TRUE,main="PACF of Hourly Mean")
 
 We then examine the decomposition of the original time series to identify seasonality and trend. Decomposition of the time series is displayed below: 
 
-```{r}
+```{r, echo=FALSE}
 #Original Series: Decomposition
 ts %>% mstl() %>%
   autoplot()
@@ -139,7 +141,7 @@ autoplot(ts) +
   labs(title= "STL+ETS vs. Observed")
 ```
 
-We observe that that the STL+ETS model follows the seasonality well (as observed by the coincidental oscillation of the red and black series); however, the magnitude of the forecast does not fit the data we observe well. Forecasted data has a greater magnitude than the observed data when the time series is at its peak but a lower magnitude than observed data when the time seriess is at its minimum. f. 
+We observe that that the STL+ETS model follows the seasonality well (as observed by the coincidental oscillation of the red and black series); however, the magnitude of the forecast does not fit the data we observe well. Forecasted data has a greater magnitude than the observed data when the time series is at its peak but a lower magnitude than observed data when the time series is at its minimum. f. 
 
 ```{r, include = FALSE}
 #WRANGLING FOR KAGGLE SUBMISSION
@@ -193,7 +195,7 @@ autoplot(ts) +
   ylab("Daily Load")+
   labs(title= "ARIMA+Fourier Terms vs. Observed")
 ```
-We tried different K numbers, such as 4, 6, 12, 24, 36, and 60. We found that although 48 performs the best accuracy compared with the original data, the forecasted still has a greater magnitude than observed data when the time series is at its peak/ maximum, but has a lower magnitude when the time series is at its minimum.
+We tried different K numbers, such as 4, 6, 12, 24, 36, and 60. We found that although 48 performs the best accuracy compared with the original data, the forecasted still has a greater magnitude than observed data when the time series is at its peak maximum, but has a lower magnitude when the time series is at its minimum.
 
 ```{r, include = FALSE}
 #WRANGLING FOR KAGGLE SUBMISSION
@@ -221,7 +223,7 @@ write.xlsx(combine_model_final, file = "Sirison_Wu_2.xlsx")
 
 #Model 3: TBATS
 
-Our third model is the Trigonometric seasonality, Box-Cox transformation (TBATs), which is a model appropriate for handling time series data that has multiple seasonalities. The TBATS approach models seasonal periods using trigonmetrics based on Fourier series.
+Our third model is the Trigonometric seasonality, Box-Cox transformation (TBATs), which is a model appropriate for handling time series data that has multiple seasonalities. The TBATS approach models seasonal periods using trigonometric based on Fourier series.
 
 ```{r, echo=TRUE, message=FALSE, warning=FALSE}
 TBATS_fit <- tbats(ts_train)
@@ -260,7 +262,7 @@ write.xlsx(submission_template_TBATS, file = "Sirison_Wu_3.xlsx")
 
 #Model 4. Neural Network Time Series Forecasts
 
-Our fourth model is the Neural Network model. The neural networkk we used here is a feed forward neural network (FNN), meaning the nodes do not form a cycle or inputs to the FNN produces outputs that do not feed back into the next input. 
+Our fourth model is the Neural Network model. The neural network we used here is a feed forward neural network (FNN), meaning the nodes do not form a cycle or inputs to the FNN produces outputs that do not feed back into the next input. 
 
 ```{r, include = FALSE}
 #NN_fit and forecast
@@ -277,6 +279,7 @@ autoplot(ts) +
   labs(title= "Neural Network vs. Observed")
 ```
 
+After trials, we found that NNAR(1,0,12) fits the model best, which means non-seasonal AR is 1, and seasonal AR equals to 0 with 12 hidden nodes.
 The neural network model is able to follow both the seasonality and magnitude of the observed data very well. 
 
 ```{r,  message=FALSE, include = FALSE}
@@ -338,18 +341,31 @@ row.names(scores) <- c("STL+ETS", "ARIMA+Fourier","TBATS","NN")
 
 #choose model with lowest RMSE
 best_model_index <- which.min(scores[,"RMSE"])
-cat("The best model by RMSE is:", row.names(scores[best_model_index,]))               
+cat("The best model by RMSE is:", row.names(scores[best_model_index,]))   
+
+#choose model with lowest MAPE
+best_model_index <- which.min(scores[,"MAPE"])
+cat("The best model by MAPE is:", row.names(scores[best_model_index,])) 
 ```
 
 We examine 2 metrics for model performance: RMSE (Root Mean Square Error) and MAPE (Mean Absolute Percentage Error). RMSE is a metric that averages the difference between actual and predicted values, meaning it takes errors in magnitude into account. MAPE measures the average percentage difference between actual and predicted values.
 
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
-#Table of accuracy statitics
+#Table of accuracy statistics
 kbl(scores, 
-      caption = "Forecast Accuracy for Daily Active Power",
+      caption = "Forecast Accuracy for Daily Load",
       digits = array(5,ncol(scores))) %>%
   kable_styling(full_width = FALSE, position = "center", latex_options = "hold_position") %>%
   kable_styling(latex_options="striped", stripe_index = which.min(scores[,"RMSE"]))
+```
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+#Table of accuracy statistics
+kbl(scores, 
+      caption = "Forecast Accuracy for Daily Load",
+      digits = array(5,ncol(scores))) %>%
+  kable_styling(full_width = FALSE, position = "center", latex_options = "hold_position") %>%
+  kable_styling(latex_options="striped", stripe_index = which.min(scores[,"MAPE"]))
 ```
 
 The best model by RMSE is the TBATS model, while the best model by MAPE is the Neural Network model. This discrepancy is due to the fact that RMSE and MAPE captures different aspects in terms of accuracy. RMSE focuses more on magnitude of errors, while MAPE focuses more on percentage of errors. 
