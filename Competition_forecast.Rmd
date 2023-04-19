@@ -9,7 +9,7 @@ output:
 
 ##  INTRODUCTION
 
-```{r setup, include=FALSE}
+```{r}
 knitr::opts_chunk$set(warning = FALSE, message = FALSE)
 #Installing required packages
 library(lubridate)
@@ -39,12 +39,12 @@ This project aims to find a suitable model that best forecasts daily load. The m
 
 The dataset we are working in provides hourly data from January 1, 2005 to December 31,2010. We have aggregated hourly data into daily data, by taking the average across 24 hours of each day. 
 
-```{r, include= FALSE}
+```{r}
 #Loading in the data set
 df<-read_excel("load.xlsx")
 ```
 
-```{r, include = FALSE}
+```{r}
 #DATA WRANGLING
 #Taking the average across hours of the day
 df$hourly_mean <- rowMeans(df[,3:26])
@@ -57,7 +57,7 @@ df$date <- ymd(df$date)
 
 ```
 
-```{r, include = FALSE}
+```{r}
 #Drop NAs
 df1 <- df %>% drop_na()
 
@@ -112,7 +112,7 @@ After performing initial data exploration of aggregated (daily) data, we examine
 
 ##FORECASTING DAILY LOAD
 
-```{r message=FALSE, warning=FALSE, include = FALSE}
+```{r, message=FALSE, warning=FALSE}
 #create a subset for training purpose (2005-2009)
 n_for = 365
 ts_train <- subset(ts,end = length(ts)-n_for)
@@ -133,7 +133,7 @@ Our first forecasting model applies a non-seasonal exponential smoothing model t
 ETS_fit <-  stlf(ts_train,h=365)
 ```
 
-```{r}
+```{r, echo = TRUE}
 #Plot model + observed data
 autoplot(ts) +
   autolayer(ETS_fit, series="STL + ETS",PI=FALSE) +
@@ -143,7 +143,7 @@ autoplot(ts) +
 
 We observe that that the STL+ETS model follows the seasonality well (as observed by the coincidental oscillation of the red and black series); however, the magnitude of the forecast does not fit the data we observe well. Forecasted data has a greater magnitude than the observed data when the time series is at its peak but a lower magnitude than observed data when the time series is at its minimum. f. 
 
-```{r, include = FALSE}
+```{r}
 #WRANGLING FOR KAGGLE SUBMISSION
 
 #Generate 2011 output for Kaggle competition
@@ -197,7 +197,7 @@ autoplot(ts) +
 ```
 We tried different K numbers, such as 4, 6, 12, 24, 36, and 60. We found that although 48 performs the best accuracy compared with the original data, the forecasted still has a greater magnitude than observed data when the time series is at its peak maximum, but has a lower magnitude when the time series is at its minimum.
 
-```{r, include = FALSE}
+```{r}
 #WRANGLING FOR KAGGLE SUBMISSION
 
 #Generate 2011 output for Kaggle competition
@@ -240,7 +240,7 @@ autoplot(ts) +
 
 The TBATS model fits the seasonality well; however the magnitude for both when the time series is at its maximum and its minimum is lower than what observed data. 
 
-```{r, include = FALSE}
+```{r}
 #WRANGLING FOR KAGGLE SUBMISSION
 #Generate 2011 output for Kaggle competition
 TBATS_fit_kaggle <- forecast(TBATS_fit, h=59)
@@ -264,7 +264,7 @@ write.xlsx(submission_template_TBATS, file = "Sirison_Wu_3.xlsx")
 
 Our fourth model is the Neural Network model. The neural network we used here is a feed forward neural network (FNN), meaning the nodes do not form a cycle or inputs to the FNN produces outputs that do not feed back into the next input. 
 
-```{r, include = FALSE}
+```{r}
 #NN_fit and forecast
 NN_fit <- nnetar(ts_train,p=1,P=0,xreg=fourier(ts_train, K=c(2,12)))
 NN_for <- forecast(NN_fit, h=365,xreg=fourier(ts_train, 
@@ -282,7 +282,7 @@ autoplot(ts) +
 After trials, we found that NNAR(1,0,12) fits the model best, which means non-seasonal AR is 1, and seasonal AR equals to 0 with 12 hidden nodes.
 The neural network model is able to follow both the seasonality and magnitude of the observed data very well. 
 
-```{r,  message=FALSE, include = FALSE}
+```{r,message=FALSE}
 #WRANGLING FOR KAGGLE SUBMISSION
 #Generate 2011 output for Kaggle competition
 NN_fit_kaggle <- forecast(NN_for, h=59)
@@ -304,7 +304,7 @@ write.xlsx(submission_template_NN, file = "Sirison_Wu_4.xlsx")
 
 ##EXAMINING ACCURACY OF FORECASTS 
 
-```{r, include = FALSE}
+```{r}
 #Model 1: STL + ETS Accuracy
 ETS_scores <- accuracy(ETS_fit$mean,ts_test)  
 
@@ -332,7 +332,7 @@ autoplot(ts) +
 After visually examining how each model performs compares to observed data, it is unclear which model performs the best; therefore, we calculate accuracy metrics for each model.
 
 #Compare performance metrics
-```{r, include = FALSE}
+```{r}
 #create data frame
 scores <- as.data.frame(
   rbind(ETS_scores, ARIMA_scores, TBATS_scores, NN_scores)
