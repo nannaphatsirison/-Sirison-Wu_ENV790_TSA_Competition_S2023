@@ -68,7 +68,7 @@ ts <- msts(df1[,2], seasonal.periods = c(7,365.25),start=c(2005,01,01),end=c(201
 
 A plot of the dataset we are working with is shown, below with a table of summary statistics. 
 
-```{r, echo= FALSE}
+```{r, echo= TRUE}
 #Initial plot of time series
 ts_plot<-ggplot(df1,aes(x=date, y=hourly_mean))+
   geom_line()+
@@ -77,7 +77,7 @@ ts_plot<-ggplot(df1,aes(x=date, y=hourly_mean))+
 plot(ts_plot)
 ```
 
-```{r, echo = FALSE}
+```{r, echo = TRUE}
 #Summary of time series
 ts_summary<-summary(ts)
 ts_summary
@@ -91,7 +91,7 @@ Based on the historical data set we are using, observed minimum load is at 1525,
 
 Before running a time series forecast model, we prepare and transform the data to fit the needs of time series forecasting. Before selecting models for time series forecasting, we examine ACF and PACF plots of the original, un-transformed time series (shown below).
 
-```{r, echo=FALSE}
+```{r, echo=TRUE}
 #Original Series: ACF and PACF Plots
 par(mfrow=c(1,2))
 ACF_Plot <- Acf(ts, lag = 40, plot = TRUE,main="ACF of Hourly Mean")
@@ -101,7 +101,7 @@ PACF_Plot <- Pacf(ts, lag = 40,plot = TRUE,main="PACF of Hourly Mean")
 
 We then examine the decomposition of the original time series to identify seasonality and trend. Decomposition of the time series is displayed below: 
 
-```{r, echo=FALSE}
+```{r, echo=TRUE}
 #Original Series: Decomposition
 ts %>% mstl() %>%
   autoplot()
@@ -282,7 +282,7 @@ autoplot(ts) +
 After trials, we found that NNAR(1,0,12) fits the model best, which means non-seasonal AR is 1, and seasonal AR equals to 0 with 12 hidden nodes.
 The neural network model is able to follow both the seasonality and magnitude of the observed data very well. 
 
-```{r,message=FALSE}
+```{r, message=FALSE}
 #WRANGLING FOR KAGGLE SUBMISSION
 #Generate 2011 output for Kaggle competition
 NN_fit_kaggle <- forecast(NN_for, h=59)
@@ -350,7 +350,7 @@ cat("The best model by MAPE is:", row.names(scores[best_model_index,]))
 
 We examine 2 metrics for model performance: RMSE (Root Mean Square Error) and MAPE (Mean Absolute Percentage Error). RMSE is a metric that averages the difference between actual and predicted values, meaning it takes errors in magnitude into account. MAPE measures the average percentage difference between actual and predicted values.
 
-```{r echo=FALSE, message=FALSE, warning=FALSE}
+```{r echo=TRUE, message=FALSE, warning=FALSE}
 #Table of accuracy statistics
 kbl(scores, 
       caption = "Forecast Accuracy for Daily Load",
@@ -359,7 +359,7 @@ kbl(scores,
   kable_styling(latex_options="striped", stripe_index = which.min(scores[,"RMSE"]))
 ```
 
-```{r echo=FALSE, message=FALSE, warning=FALSE}
+```{r echo=TRUE, message=FALSE, warning=FALSE}
 #Table of accuracy statistics
 kbl(scores, 
       caption = "Forecast Accuracy for Daily Load",
